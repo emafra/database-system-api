@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<configuration-properties doc:name="Configuration properties" doc:id="faed4456-1f5d-4e43-975c-ab9c55b61d31" file="properties-${env}.yaml" />
+	<api-gateway:autodiscovery apiId="${apiId}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="a8ee08b8-3590-413c-802e-51e6d16b4de7" flowRef="database-system-api-main"/>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="06de5e41-a1bb-4daf-aac7-25f4665865c8" >
+		<db:my-sql-connection host="${database.host}" port="${database.port}" user="${database.user}" password="${database.password}" database="${database.name}"/>
+	</db:config>
+	<configuration-properties doc:name="Configuration properties" doc:id="766609fc-4217-4cd9-bb2c-fdcd86fb0cac" file="properties.yaml" />
+</mule>

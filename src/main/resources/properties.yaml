@@ -1,0 +1,5 @@
+apiId: "18696757"
+
+http:
+  port: "8082"
+  basePath: "database-system-api/v1"

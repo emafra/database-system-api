@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="usersDatabaseInsertFlow" doc:id="25d2139f-15ee-47fc-b818-bb79296591e8" >
+		<logger level="INFO" doc:name="Before Insert Users" doc:id="4aebd158-b762-403f-86b6-3e32977dd181" message="Before Insert Users"/>
+		<set-variable value="#[[]]" doc:name="Duplicated Users" doc:id="b5eadca8-a95c-464d-82d5-b5da0f63102b" variableName="duplicatedUsers" />
+		<set-variable value="#[[]]" doc:name="Created Users" doc:id="d6c4d709-e0c6-490e-b823-05a79f3d9608" variableName="createdUsers"/>
+		<foreach doc:name="For Each" doc:id="8dbd0fa2-3db0-4bb6-80df-2edbdc688aa6" >
+			<try doc:name="Try" doc:id="76809fcb-1c98-4017-99a1-6540b3de0f23">
+				<db:insert doc:name="Insert Users" doc:id="2f39320b-bf7b-4a3f-9052-31c2fadd1056" config-ref="Database_Config">
+			<db:sql><![CDATA[INSERT INTO users (id, name, age) VALUES (:id, :name, :age)]]></db:sql>
+			<db:input-parameters><![CDATA[#[{'id':payload.id, 'name':payload.name, 'age':payload.age}]]]></db:input-parameters>
+		</db:insert>
+				<ee:transform doc:name="Created Users" doc:id="285a3063-23cf-4d07-9c94-b8c5445d63fd">
+					<ee:message>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="createdUsers"><![CDATA[%dw 2.0
+output application/java
+---
+vars.createdUsers ++ [payload]]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+				<error-handler>
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="dfd4f5bc-7bda-44dc-80be-4fe3abc55ebb" type="DB:QUERY_EXECUTION">
+						<ee:transform doc:name="Duplicated Users" doc:id="ea1cfd0c-95db-4860-a82e-2b50df252f31">
+							<ee:message>
+							</ee:message>
+							<ee:variables>
+								<ee:set-variable variableName="duplicatedUsers"><![CDATA[%dw 2.0
+output application/java
+---
+vars.duplicatedUsers ++ [payload]]]></ee:set-variable>
+							</ee:variables>
+						</ee:transform>
+					</on-error-continue>
+				</error-handler>
+			</try>
+		</foreach>
+		<logger level="INFO" doc:name="After Insert Users" doc:id="65493f97-bf67-46fb-a415-b3b4bbe7195b" message="After Insert Users"/>
+		<choice doc:name="Choice" doc:id="f1df5ac4-5104-40d3-8f4e-08e3b2f291c8" >
+			<when expression="#[sizeOf(vars.duplicatedUsers) &gt;= 0]">
+				<logger level="INFO" doc:name="Some users already exist at the Users Database" doc:id="640996b7-a559-4e52-b03f-649cdd8622e0" message="Some users already exist at the Users Database"/>
+				<raise-error doc:name="Users partially created" doc:id="cbfa704d-f4db-4402-ba2a-d6815030f673" type="USERS:MULTI-STATUS" description="Users partially created"/>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Http 201 Response" doc:id="5b21affe-3b3e-4efd-b069-af49b9f54fd9">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Users created successfully",
+	createdUsers: vars.createdUsers
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="httpStatus"><![CDATA[201]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+			</otherwise>
+		</choice>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="a645aaa2-d0ab-4a5e-a9ef-f6a1aa190283" type="USERS:MULTI-STATUS">
+				<ee:transform doc:name="Http 207 Response" doc:id="6fd6ba57-0a5f-4dc3-afd3-c66a7e8101bd">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Users partially created",
+	createdUsers: vars.createdUsers,
+	duplicatedUsersFailure: vars.duplicatedUsers
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables>
+						<ee:set-variable variableName="httpStatus"><![CDATA[207]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>
