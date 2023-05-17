@@ -11,4 +11,5 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
 		<db:my-sql-connection host="${database.host}" port="${database.port}" user="${database.user}" password="${database.password}" database="${database.name}"/>
 	</db:config>
 	<configuration-properties doc:name="Configuration properties" doc:id="766609fc-4217-4cd9-bb2c-fdcd86fb0cac" file="properties.yaml" />
+	<global-property doc:name="Global Property" doc:id="f9208c99-dfb8-4f23-8faf-ba02092b16a9" name="env" value="local" />
 </mule>
